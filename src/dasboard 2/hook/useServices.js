@@ -8,7 +8,7 @@ export default function useServices() {
   useEffect(() => {
     const fetchServices = async () => {
       try {
-        const res = await fetch("http://localhost:5009/api/services");
+        const res = await fetch("https://jboosterbackend.onrender.com/api/services");
         if (!res.ok) throw new Error("Failed to load services");
         const data = await res.json();
         setServices(data);

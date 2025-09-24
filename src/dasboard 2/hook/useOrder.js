@@ -9,7 +9,7 @@ export default function useOrder() {
   setLoading(true);
   setToast({ show: false, message: "", type: "success" });
   try {
-    const res = await fetch("http://localhost:5009/api/orders", {
+    const res = await fetch("https://jboosterbackend.onrender.com/api/orders", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ serviceId, serviceName, rate, link, quantity }),
