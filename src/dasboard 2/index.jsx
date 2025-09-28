@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import useServices from "./hook/useServices";
 import useOrder from "./hook/useOrder";
 import useLogout from "./hook/useLogout";
+import FullPageLoader from "../login 2/components/FullPageLoader";
 
 export default function Dashboard() {
   const { services, loading } = useServices();
@@ -28,7 +29,7 @@ const { placeOrder, loading: orderLoading, toast } = useOrder();
   const [quantity, setQuantity] = useState(100);
   const [link, setLink] = useState("");
 
-  if (loading) return <p className="p-6 text-center">Loading services...</p>;
+  if (loading) return <FullPageLoader />;
 
   const categories = [...new Set(services.map((s) => s.category))];
   const filteredServices = services.filter((s) => s.category === category);
@@ -76,11 +77,12 @@ const { placeOrder, loading: orderLoading, toast } = useOrder();
               <p className="text-gray-500 text-xs sm:text-sm">Balance</p>
               <p className="font-bold text-lg sm:text-xl">₦{user.balance.toLocaleString()}</p>
               <button
-                onClick={() => setShowFundModal(true)}
-                className="mt-1 text-xs sm:text-sm text-purple-600 hover:underline"
-              >
-                Fund Account
-              </button>
+  onClick={() => window.location.href = "/fund"}
+  className="mt-1 text-xs sm:text-sm text-purple-600 hover:underline"
+>
+  Fund Account
+</button>
+
             </div>
             <div className="bg-white shadow-lg p-4 sm:p-6 rounded-xl w-36 sm:w-44 hover:shadow-2xl transition transform hover:-translate-y-1">
               <p className="text-gray-500 text-xs sm:text-sm">Total Orders</p>
@@ -217,37 +219,6 @@ const { placeOrder, loading: orderLoading, toast } = useOrder();
 )}
   </div>
 </main>
-
-
-      {/* Fund Account Modal */}
-      {showFundModal && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-2xl p-6 w-80 sm:w-96 shadow-2xl">
-            <h3 className="text-xl font-bold text-purple-700 mb-4">Fund Account</h3>
-            <input
-              type="number"
-              placeholder="Enter amount"
-              value={fundAmount}
-              onChange={(e) => setFundAmount(e.target.value)}
-              className="w-full p-3 border rounded-lg focus:ring-2 focus:ring-purple-500 mb-4"
-            />
-            <div className="flex justify-end gap-3">
-              <button
-                onClick={() => setShowFundModal(false)}
-                className="px-4 py-2 rounded-lg border hover:bg-gray-100 transition"
-              >
-                Cancel
-              </button>
-              <button
-                onClick={handleFund}
-                className="px-4 py-2 rounded-lg bg-purple-600 text-white hover:bg-purple-500 transition"
-              >
-                Fund
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
     </div>
   );
 }

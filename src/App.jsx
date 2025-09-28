@@ -8,6 +8,7 @@ import LandingPageTwo from "./home 2";
 import Dashboard from "./dasboard 2";
 import ProtectedRoute from "./login 2/components/ProtectedRoute";
 import PublicRoute from "./components/PublicRoute";
+import FundAccount from "./payment/fundacct";
 
 function App() {
   return (
@@ -28,6 +29,15 @@ function App() {
             <PublicRoute>
               <AuthPage />
             </PublicRoute>
+          }
+        />
+
+        <Route
+          path="/fund"
+          element={
+            <ProtectedRoute>
+              <FundAccount />
+            </ProtectedRoute>
           }
         />
 
