@@ -9,9 +9,9 @@ export default function FundAccount() {
   const [phone, setPhone] = useState("");
   const [paymentDetails, setPaymentDetails] = useState(null);
   const [timeLeft, setTimeLeft] = useState(EXPIRY_TIME);
-  const { fundAccount, loading } = useFund();
+  const { fundAccount, checkStatus, loading } = useFund();
 
-  // Restore from localStorage on page load
+  // Restore from localStorage on refresh
   useEffect(() => {
     const saved = localStorage.getItem("paymentDetails");
     if (saved) {
@@ -24,6 +24,7 @@ export default function FundAccount() {
     }
   }, []);
 
+  // Create top-up
   const handleFund = async () => {
     try {
       const res = await fundAccount(amount, phone);
@@ -34,7 +35,7 @@ export default function FundAccount() {
         startTime: Date.now(),
       };
 
-      // save to localStorage
+      localStorage.setItem("transactionId", res.payment.transactionId);
       localStorage.setItem("paymentDetails", JSON.stringify(data));
       setPaymentDetails(res.payment);
       setTimeLeft(EXPIRY_TIME);
@@ -43,11 +44,11 @@ export default function FundAccount() {
     }
   };
 
-  // countdown effect
+  // Countdown effect
   useEffect(() => {
     if (!paymentDetails) return;
     if (timeLeft <= 0) {
-      localStorage.removeItem("paymentDetails"); // clear expired data
+      localStorage.removeItem("paymentDetails");
       return;
     }
 
@@ -59,11 +60,33 @@ export default function FundAccount() {
   }, [paymentDetails, timeLeft]);
 
   const formatTime = (seconds) => {
-    const m = Math.floor(seconds / 60)
-      .toString()
-      .padStart(2, "0");
+    const m = Math.floor(seconds / 60).toString().padStart(2, "0");
     const s = (seconds % 60).toString().padStart(2, "0");
     return `${m}:${s}`;
+  };
+
+  // ✅ Check status handler
+  const handleCheckStatus = async () => {
+    try {
+      const transactionId = paymentDetails.transactionId;
+      const res = await checkStatus(transactionId);
+
+      if (res.status === "success") {
+        alert(`✅ Top-up successful! New balance: ₦${res.balance}`);
+        localStorage.removeItem("paymentDetails");
+        setPaymentDetails(null);
+        setAmount("");
+        setPhone("");
+      } else if (res.status === "failed") {
+        alert("❌ Transaction failed. Please try again.");
+        localStorage.removeItem("paymentDetails");
+        setPaymentDetails(null);
+      } else {
+        alert("⏳ Still pending. Please wait a little longer.");
+      }
+    } catch (err) {
+      alert(`❌ ${err.message}`);
+    }
   };
 
   if (paymentDetails) {
@@ -74,10 +97,11 @@ export default function FundAccount() {
             Complete Your Transfer
           </h1>
 
-          {/* Timer */}
           <p className="text-gray-600 mb-6">
             Please complete your transfer within:{" "}
-            <span className="font-bold text-purple-600">{formatTime(timeLeft)}</span>
+            <span className="font-bold text-purple-600">
+              {formatTime(timeLeft)}
+            </span>
           </p>
 
           <div className="p-6 border rounded-xl bg-purple-50 text-left">
@@ -94,26 +118,25 @@ export default function FundAccount() {
               {paymentDetails.transactionId}
             </p>
             <p className="text-sm text-gray-600 mt-3">
-              Transfer exactly <span className="font-medium">₦{amount}</span> to
-              complete your wallet top-up.
+              Transfer exactly{" "}
+              <span className="font-medium">₦{amount}</span> to complete your
+              wallet top-up.
             </p>
           </div>
 
           <button
-            onClick={() => {
-              alert("✅ We’ll verify your payment shortly.");
-              localStorage.removeItem("paymentDetails"); // clear after confirmation
-            }}
-            className="w-full mt-6 py-3 rounded-xl font-semibold text-white bg-green-600 hover:bg-green-500 transition"
+            onClick={handleCheckStatus}
+            disabled={loading}
+            className="w-full mt-6 py-3 rounded-xl font-semibold text-white bg-green-600 hover:bg-green-500 transition disabled:opacity-50"
           >
-            I Have Made The Transfer
+            {loading ? "Checking..." : "I Have Made The Transfer"}
           </button>
         </div>
       </div>
     );
   }
 
-  // default form
+  // Default form
   return (
     <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-purple-50 to-purple-100 p-6">
       <div className="bg-white shadow-2xl rounded-2xl p-8 w-full max-w-md text-center">
