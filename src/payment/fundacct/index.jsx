@@ -2,17 +2,42 @@ import { useState, useEffect } from "react";
 import useFund from "./hook/useFund";
 import FullPageLoader from "../../login 2/components/FullPageLoader";
 
+const EXPIRY_TIME = 15 * 60; // 15 minutes in seconds
+
 export default function FundAccount() {
   const [amount, setAmount] = useState("");
   const [phone, setPhone] = useState("");
   const [paymentDetails, setPaymentDetails] = useState(null);
-  const [timeLeft, setTimeLeft] = useState(15 * 60); // 15 minutes in seconds
+  const [timeLeft, setTimeLeft] = useState(EXPIRY_TIME);
   const { fundAccount, loading } = useFund();
+
+  // Restore from localStorage on page load
+  useEffect(() => {
+    const saved = localStorage.getItem("paymentDetails");
+    if (saved) {
+      const parsed = JSON.parse(saved);
+      const elapsed = Math.floor((Date.now() - parsed.startTime) / 1000);
+      const remaining = Math.max(EXPIRY_TIME - elapsed, 0);
+      setPaymentDetails(parsed.payment);
+      setAmount(parsed.amount);
+      setTimeLeft(remaining);
+    }
+  }, []);
 
   const handleFund = async () => {
     try {
       const res = await fundAccount(amount, phone);
-      setPaymentDetails(res.payment); // switch to payment screen
+
+      const data = {
+        payment: res.payment,
+        amount,
+        startTime: Date.now(),
+      };
+
+      // save to localStorage
+      localStorage.setItem("paymentDetails", JSON.stringify(data));
+      setPaymentDetails(res.payment);
+      setTimeLeft(EXPIRY_TIME);
     } catch (err) {
       alert(`❌ ${err.message}`);
     }
@@ -21,7 +46,10 @@ export default function FundAccount() {
   // countdown effect
   useEffect(() => {
     if (!paymentDetails) return;
-    if (timeLeft <= 0) return;
+    if (timeLeft <= 0) {
+      localStorage.removeItem("paymentDetails"); // clear expired data
+      return;
+    }
 
     const interval = setInterval(() => {
       setTimeLeft((prev) => prev - 1);
@@ -39,7 +67,6 @@ export default function FundAccount() {
   };
 
   if (paymentDetails) {
-    // ✅ Show Payment Instructions Screen
     return (
       <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-purple-50 to-purple-100 p-6">
         <div className="bg-white shadow-2xl rounded-2xl p-8 w-full max-w-md text-center">
@@ -73,7 +100,10 @@ export default function FundAccount() {
           </div>
 
           <button
-            onClick={() => alert("✅ We’ll verify your payment shortly.")}
+            onClick={() => {
+              alert("✅ We’ll verify your payment shortly.");
+              localStorage.removeItem("paymentDetails"); // clear after confirmation
+            }}
             className="w-full mt-6 py-3 rounded-xl font-semibold text-white bg-green-600 hover:bg-green-500 transition"
           >
             I Have Made The Transfer
@@ -83,7 +113,7 @@ export default function FundAccount() {
     );
   }
 
-  // 📝 Default Funding Form
+  // default form
   return (
     <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-purple-50 to-purple-100 p-6">
       <div className="bg-white shadow-2xl rounded-2xl p-8 w-full max-w-md text-center">
