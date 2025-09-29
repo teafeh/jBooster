@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import useFund from "./hook/useFund";
 import FullPageLoader from "../../login 2/components/FullPageLoader";
+import axios from "axios";
 
 const EXPIRY_TIME = 15 * 60; // 15 minutes in seconds
 
@@ -9,9 +10,10 @@ export default function FundAccount() {
   const [phone, setPhone] = useState("");
   const [paymentDetails, setPaymentDetails] = useState(null);
   const [timeLeft, setTimeLeft] = useState(EXPIRY_TIME);
-  const { fundAccount, checkStatus, loading } = useFund();
+  const [checking, setChecking] = useState(false);
+  const { fundAccount, loading } = useFund();
 
-  // Restore from localStorage on refresh
+  // Restore from localStorage on page load
   useEffect(() => {
     const saved = localStorage.getItem("paymentDetails");
     if (saved) {
@@ -24,7 +26,6 @@ export default function FundAccount() {
     }
   }, []);
 
-  // Create top-up
   const handleFund = async () => {
     try {
       const res = await fundAccount(amount, phone);
@@ -35,6 +36,7 @@ export default function FundAccount() {
         startTime: Date.now(),
       };
 
+      // save to localStorage
       localStorage.setItem("transactionId", res.payment.transactionId);
       localStorage.setItem("paymentDetails", JSON.stringify(data));
       setPaymentDetails(res.payment);
@@ -48,7 +50,8 @@ export default function FundAccount() {
   useEffect(() => {
     if (!paymentDetails) return;
     if (timeLeft <= 0) {
-      localStorage.removeItem("paymentDetails");
+      localStorage.removeItem("paymentDetails"); // clear expired data
+      localStorage.removeItem("transactionId");
       return;
     }
 
@@ -65,27 +68,53 @@ export default function FundAccount() {
     return `${m}:${s}`;
   };
 
-  // ✅ Check status handler
+  // ✅ Check top-up status from backend
   const handleCheckStatus = async () => {
     try {
-      const transactionId = paymentDetails.transactionId;
-      const res = await checkStatus(transactionId);
+      setChecking(true);
+      const transactionId = localStorage.getItem("transactionId");
+      if (!transactionId) throw new Error("No transaction found");
 
-      if (res.status === "success") {
-        alert(`✅ Top-up successful! New balance: ₦${res.balance}`);
+      const token = localStorage.getItem("token");
+      const res = await axios.get(
+        `${import.meta.env.VITE_API_URL}/wallet/${transactionId}/status`,
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      );
+
+      if (res.data.status === "success") {
+        alert("✅ Payment successful! Your wallet has been credited.");
         localStorage.removeItem("paymentDetails");
+        localStorage.removeItem("transactionId");
         setPaymentDetails(null);
         setAmount("");
         setPhone("");
-      } else if (res.status === "failed") {
-        alert("❌ Transaction failed. Please try again.");
+      } else if (res.data.status === "failed") {
+        alert("❌ Payment failed. Please try again.");
         localStorage.removeItem("paymentDetails");
+        localStorage.removeItem("transactionId");
         setPaymentDetails(null);
       } else {
-        alert("⏳ Still pending. Please wait a little longer.");
+        alert("⌛ Payment still pending. Please wait.");
       }
     } catch (err) {
       alert(`❌ ${err.message}`);
+    } finally {
+      setChecking(false);
+    }
+  };
+
+  // ❌ Cancel current transaction
+  const handleCancel = () => {
+    if (window.confirm("Are you sure you want to cancel this payment?")) {
+      localStorage.removeItem("paymentDetails");
+      localStorage.removeItem("transactionId");
+      setPaymentDetails(null);
+      setAmount("");
+      setPhone("");
     }
   };
 
@@ -97,6 +126,7 @@ export default function FundAccount() {
             Complete Your Transfer
           </h1>
 
+          {/* Timer */}
           <p className="text-gray-600 mb-6">
             Please complete your transfer within:{" "}
             <span className="font-bold text-purple-600">
@@ -118,25 +148,33 @@ export default function FundAccount() {
               {paymentDetails.transactionId}
             </p>
             <p className="text-sm text-gray-600 mt-3">
-              Transfer exactly{" "}
-              <span className="font-medium">₦{amount}</span> to complete your
-              wallet top-up.
+              Transfer exactly <span className="font-medium">₦{amount}</span> to
+              complete your wallet top-up.
             </p>
           </div>
 
+          {/* ✅ Confirm transfer */}
           <button
             onClick={handleCheckStatus}
-            disabled={loading}
+            disabled={checking}
             className="w-full mt-6 py-3 rounded-xl font-semibold text-white bg-green-600 hover:bg-green-500 transition disabled:opacity-50"
           >
-            {loading ? "Checking..." : "I Have Made The Transfer"}
+            {checking ? "Checking..." : "I Have Made The Transfer"}
+          </button>
+
+          {/* ❌ Cancel */}
+          <button
+            onClick={handleCancel}
+            className="w-full mt-3 py-3 rounded-xl font-semibold text-white bg-red-600 hover:bg-red-500 transition"
+          >
+            Cancel Payment
           </button>
         </div>
       </div>
     );
   }
 
-  // Default form
+  // default form
   return (
     <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-purple-50 to-purple-100 p-6">
       <div className="bg-white shadow-2xl rounded-2xl p-8 w-full max-w-md text-center">
