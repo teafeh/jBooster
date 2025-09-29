@@ -12,10 +12,9 @@ export default function useFund() {
     setLoading(true);
     try {
       const token = localStorage.getItem("token");
-      if (!token) throw new Error("Unauthorized: Please login");
 
       const res = await axios.post(
-        `${import.meta.env.VITE_API_URL}/wallet/topup`,
+        `${import.meta.env.VITE_API_BASE_URL}/wallet/topup`,
         { amount, phone },
         {
           headers: {
@@ -24,10 +23,12 @@ export default function useFund() {
         }
       );
 
-      return res.data; // backend response with virtual account details
+      return res.data;
     } catch (error) {
       console.error("Fund error:", error.response?.data || error.message);
-      throw new Error(error.response?.data?.error || "Failed to initialize payment");
+      throw new Error(
+        error.response?.data?.error || "Failed to initialize payment"
+      );
     } finally {
       setLoading(false);
     }
