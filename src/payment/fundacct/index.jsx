@@ -1,5 +1,6 @@
 import { useState } from "react";
 import useFund from "./hook/useFund";
+import FullPageLoader from "../../login 2/components/FullPageLoader";
 
 export default function FundAccount() {
   const [amount, setAmount] = useState("");
@@ -56,7 +57,7 @@ export default function FundAccount() {
           disabled={loading}
           className="w-full py-3 rounded-xl font-semibold text-white bg-purple-600 hover:bg-purple-500 transition disabled:opacity-50"
         >
-          {loading ? "Processing..." : "Proceed to Payment"}
+          {loading ? <FullPageLoader /> : "Proceed to Payment"}
         </button>
       </div>
     </div>
