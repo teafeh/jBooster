@@ -5,16 +5,13 @@ import FullPageLoader from "../../login 2/components/FullPageLoader";
 export default function FundAccount() {
   const [amount, setAmount] = useState("");
   const [phone, setPhone] = useState("");
+  const [paymentDetails, setPaymentDetails] = useState(null);
   const { fundAccount, loading } = useFund();
 
   const handleFund = async () => {
     try {
       const res = await fundAccount(amount, phone);
-
-      // Show bank details returned by backend
-      alert(
-        `✅ Send ₦${amount} to:\n\nBank: ${res.payment.virtualBankName}\nAccount: ${res.payment.virtualAccountNumber}\nRef: ${res.payment.transactionId}`
-      );
+      setPaymentDetails(res.payment); // store bank details
     } catch (err) {
       alert(`❌ ${err.message}`);
     }
@@ -59,6 +56,31 @@ export default function FundAccount() {
         >
           {loading ? <FullPageLoader /> : "Proceed to Payment"}
         </button>
+
+        {/* Show Bank Details */}
+        {paymentDetails && (
+          <div className="mt-8 p-6 border rounded-xl bg-purple-50 text-left">
+            <h2 className="text-xl font-semibold text-purple-700 mb-4">
+              Payment Instructions
+            </h2>
+            <p className="mb-2">
+              <span className="font-medium">Bank:</span>{" "}
+              {paymentDetails.virtualBankName || "—"}
+            </p>
+            <p className="mb-2">
+              <span className="font-medium">Account Number:</span>{" "}
+              {paymentDetails.virtualAccountNumber}
+            </p>
+            <p className="mb-2">
+              <span className="font-medium">Transaction Ref:</span>{" "}
+              {paymentDetails.transactionId}
+            </p>
+            <p className="text-sm text-gray-600 mt-3">
+              Please transfer <span className="font-medium">₦{amount}</span> to
+              complete your wallet top-up.
+            </p>
+          </div>
+        )}
       </div>
     </div>
   );
