@@ -159,7 +159,7 @@ export default function FundAccount() {
             disabled={checking}
             className="w-full mt-6 py-3 rounded-xl font-semibold text-white bg-green-600 hover:bg-green-500 transition disabled:opacity-50"
           >
-            {checking ? "Checking..." : "I Have Made The Transfer"}
+            {checking ? <FullPageLoader /> : "I Have Made The Transfer"}
           </button>
 
           {/* ❌ Cancel */}
