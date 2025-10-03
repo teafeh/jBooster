@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import useServices from "./hook/useServices";
 import useOrder from "./hook/useOrder";
 import useLogout from "./hook/useLogout";
+import useFund from "../payment/fundacct/hook/useFund"; 
 import FullPageLoader from "../login 2/components/FullPageLoader";
 
 
@@ -16,6 +17,30 @@ export default function Dashboard() {
     totalOrders: 0,
     status: "newbie",
   });
+  const { fetchWalletSummary, verifyPayment } = useFund(); 
+
+  useEffect(() => {
+    const loadWallet = async () => {
+      // 1. Verify last payment if needed
+      await verifyPayment();
+
+      // 2. Always fetch fresh wallet summary
+      try {
+        const summary = await fetchWalletSummary();
+        if (summary?.success) {
+          setUser((prev) => ({
+            ...prev,
+            balance: summary.balance,
+            totalOrders: summary.totalOrders,
+          }));
+        }
+      } catch (err) {
+        console.error("Failed to fetch wallet summary", err);
+      }
+    };
+
+    loadWallet();
+  }, [verifyPayment, fetchWalletSummary]);
 
   const [category, setCategory] = useState("");
   const [selectedService, setSelectedService] = useState(null);
