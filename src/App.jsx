@@ -6,9 +6,12 @@ import AuthPage from "./login 2";
 import LandingPageTwo from "./home 2";
 
 import Dashboard from "./dasboard 2";
+import FundAccount from "./payment/fundacct";
+import Orders from "./payment/orderhistory/Orders";
+
 import ProtectedRoute from "./login 2/components/ProtectedRoute";
 import PublicRoute from "./components/PublicRoute";
-import FundAccount from "./payment/fundacct";
+import DashboardLayout from "./dasboard 2/components/DashboardLayout";
 
 function App() {
   return (
@@ -32,20 +35,34 @@ function App() {
           }
         />
 
-        <Route
-          path="/fund"
-          element={
-            <ProtectedRoute>
-              <FundAccount />
-            </ProtectedRoute>
-          }
-        />
-
+        {/* Protected routes using DashboardLayout */}
         <Route
           path="/dashboard"
           element={
             <ProtectedRoute>
-              <Dashboard />
+              <DashboardLayout>
+                <Dashboard />
+              </DashboardLayout>
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/fund"
+          element={
+            <ProtectedRoute>
+              <DashboardLayout>
+                <FundAccount />
+              </DashboardLayout>
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/orders"
+          element={
+            <ProtectedRoute>
+              <DashboardLayout>
+                <Orders />
+              </DashboardLayout>
             </ProtectedRoute>
           }
         />
