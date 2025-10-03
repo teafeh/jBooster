@@ -28,11 +28,11 @@ export default function useFund() {
       const payment = res.data?.payment;
 
       if (payment?.transactionId) {
-        // ✅ Save txRef so dashboard can poll
+        // ✅ Save transaction ID for polling
         localStorage.setItem("lastTxRef", payment.transactionId);
       }
 
-      return res.data;
+      return res.data; // contains checkoutUrl & transactionId
     } catch (error) {
       console.error("Fund error:", error.response?.data || error.message);
       throw new Error(error.response?.data?.error || "Failed to create top-up");
@@ -58,8 +58,17 @@ export default function useFund() {
         );
 
         if (res.data.status === "success") {
+          // Update user balance in localStorage
+          const user = JSON.parse(localStorage.getItem("user")) || {};
+          user.balance = res.data.balance;
+          localStorage.setItem("user", JSON.stringify(user));
+
           localStorage.removeItem("lastTxRef");
           if (onSuccess) onSuccess(res.data);
+          clearInterval(interval);
+        } else if (res.data.status === "failed") {
+          console.warn("Payment failed.");
+          localStorage.removeItem("lastTxRef");
           clearInterval(interval);
         }
       } catch (err) {
@@ -73,19 +82,25 @@ export default function useFund() {
     // check every 2 minutes
     const interval = setInterval(checkStatus, 2 * 60 * 1000);
 
-    return () => clearInterval(interval); // cleanup
+    return () => clearInterval(interval); // cleanup function
   };
 
-  // ✅ Fetch balance
+  // ✅ Fetch latest wallet balance
   const fetchBalance = async () => {
     try {
       const token = localStorage.getItem("token");
       const res = await axios.get(`${import.meta.env.VITE_API_URL}/wallet/balance`, {
         headers: { Authorization: `Bearer ${token}` },
       });
+
+      // update localStorage with latest balance
+      const user = JSON.parse(localStorage.getItem("user")) || {};
+      user.balance = res.data.balance;
+      localStorage.setItem("user", JSON.stringify(user));
+
       return res.data;
     } catch (err) {
-      console.error("Balance error:", err);
+      console.error("Balance fetch error:", err);
       throw err;
     }
   };

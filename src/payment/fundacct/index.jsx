@@ -1,18 +1,26 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import useFund from "./hook/useFund";
 import FullPageLoader from "../../login 2/components/FullPageLoader";
+import { useNavigate } from "react-router-dom";
 
 export default function FundAccount() {
   const [amount, setAmount] = useState("");
-  const { fundAccount, loading } = useFund();
+  const { fundAccount, startPolling, loading } = useFund();
+  const navigate = useNavigate();
 
   const handleFund = async () => {
     try {
       const res = await fundAccount(amount);
 
       if (res?.payment?.checkoutUrl) {
-        // ✅ save tx_ref so Dashboard can poll later
+        // ✅ Save tx_ref for polling
         localStorage.setItem("lastTxRef", res.payment.tx_ref);
+
+        // ✅ Start polling immediately
+        startPolling(() => {
+          // Redirect after payment success
+          navigate("/dashboard");
+        });
 
         // ✅ Redirect to Paystack checkout
         window.location.href = res.payment.checkoutUrl;
@@ -23,6 +31,14 @@ export default function FundAccount() {
       alert(`❌ ${err.message}`);
     }
   };
+
+  // ❌ Optional: if user left page mid-payment, resume polling
+  useEffect(() => {
+    const lastTx = localStorage.getItem("lastTxRef");
+    if (lastTx) {
+      startPolling(() => navigate("/dashboard"));
+    }
+  }, []);
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-purple-50 to-purple-100 p-6">
