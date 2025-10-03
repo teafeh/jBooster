@@ -40,7 +40,7 @@ export default function DashboardHeader({ user, onDashClick, onOrderClick, onFun
               onClick={onOrderClick}
               className="mt-1 text-xs sm:text-sm text-purple-600 hover:underline"
             >
-              Fund Account
+              Order History 
             </button>
           </div>
 
