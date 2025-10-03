@@ -5,7 +5,6 @@ import useLogout from "./hook/useLogout";
 import useFund from "../payment/fundacct/hook/useFund"; 
 import FullPageLoader from "../login 2/components/FullPageLoader";
 
-
 export default function Dashboard() {
   const { services, loading } = useServices();
   const { placeOrder, loading: orderLoading, toast } = useOrder();
@@ -70,6 +69,17 @@ export default function Dashboard() {
       rate: selectedService.rate,
       link,
       quantity,
+    }).then(() => {
+      // After placing an order, refresh wallet summary to update totalOrders & balance
+      fetchWalletSummary().then((summary) => {
+        if (summary?.success) {
+          setUser((prev) => ({
+            ...prev,
+            balance: summary.balance,
+            totalOrders: summary.totalOrders,
+          }));
+        }
+      }).catch(()=>{});
     });
   };
 
@@ -79,9 +89,7 @@ export default function Dashboard() {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-purple-50 to-purple-100 flex flex-col">
-
-
-      <main className="flex-1 flex items-center justify-center p-4 sm:p-8">
+      <main className="flex-1 flex items-start sm:items-center justify-start sm:justify-center p-4 sm:p-8">
         {/* Order Form Card */}
         <div className="bg-white shadow-lg rounded-2xl p-6 hover:shadow-2xl transition transform hover:-translate-y-1 w-full max-w-md">
           <h2 className="text-2xl font-bold mb-6 text-purple-700 text-center">
